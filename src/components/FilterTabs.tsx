@@ -1,6 +1,6 @@
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { IPO } from '../data/mockData';
+import { IPO } from '../services/liveIPOService';
 
 interface FilterTabsProps {
   activeFilter: string;

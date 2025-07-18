@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { IPO } from '../data/mockData';
-import { fetchLiveIPOData, getCachedIPOData, setCachedIPOData, fetchIPOSubscriptionStatus } from '../services/liveIPOService';
+import { IPO, fetchLiveIPOData, getCachedIPOData, setCachedIPOData, fetchIPOSubscriptionStatus } from '../services/liveIPOService';
 
 interface UseIPODataReturn {
   ipos: IPO[];
@@ -23,7 +22,7 @@ export function useIPOData(): UseIPODataReturn {
       setLoading(true);
       setError(null);
 
-      console.log('Loading IPO data...');
+      console.log('Loading IPO data from APIs...');
 
       // First, try to get cached data for immediate display
       const cachedData = getCachedIPOData();
@@ -34,28 +33,29 @@ export function useIPOData(): UseIPODataReturn {
         setLastUpdated(new Date());
       }
 
-      // Fetch fresh data in the background
+      // Fetch fresh data from APIs
       const freshData = await fetchLiveIPOData();
       
       if (freshData && freshData.length > 0) {
-        console.log(`Loaded ${freshData.length} IPOs from live data`);
+        console.log(`Loaded ${freshData.length} IPOs from live APIs`);
         setIpos(freshData);
         setCachedIPOData(freshData);
         setIsLiveData(true);
         setLastUpdated(new Date());
+        setError(null); // Clear any previous errors
       } else {
-        throw new Error('No IPO data available');
+        throw new Error('No IPO data received from APIs');
       }
     } catch (err) {
       console.error('Error loading IPO data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load IPO data');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load IPO data from APIs';
+      setError(errorMessage);
       setIsLiveData(false);
       
-      // Fallback to cached data if available
+      // If no cached data is available, show empty state
       const cachedData = getCachedIPOData();
-      if (cachedData && cachedData.length > 0) {
-        setIpos(cachedData);
-        setLastUpdated(new Date());
+      if (!cachedData || cachedData.length === 0) {
+        setIpos([]);
       }
     } finally {
       setLoading(false);
@@ -63,18 +63,18 @@ export function useIPOData(): UseIPODataReturn {
   }, []);
 
   const refreshData = useCallback(async () => {
-    console.log('Refreshing IPO data...');
+    console.log('Manually refreshing IPO data...');
     await loadIPOData();
   }, [loadIPOData]);
 
   useEffect(() => {
     loadIPOData();
     
-    // Set up auto-refresh every 5 minutes for live data
+    // Set up auto-refresh every 10 minutes for live data
     const interval = setInterval(() => {
       console.log('Auto-refreshing IPO data...');
       loadIPOData();
-    }, 5 * 60 * 1000);
+    }, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [loadIPOData]);

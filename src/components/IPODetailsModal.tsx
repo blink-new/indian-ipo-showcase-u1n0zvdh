@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { IPO } from '../data/mockData';
+import { IPO } from '../services/liveIPOService';
 import { useRealtimeSubscription } from '../hooks/useIPOData';
 
 interface IPODetailsModalProps {

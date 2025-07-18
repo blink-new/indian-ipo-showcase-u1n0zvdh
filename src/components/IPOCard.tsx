@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { IPO } from '../data/mockData';
+import { IPO } from '../services/liveIPOService';
 
 interface IPOCardProps {
   ipo: IPO;

@@ -5,9 +5,9 @@ import { IPOCard } from './components/IPOCard';
 import { IPODetailsModal } from './components/IPODetailsModal';
 import { IPOGridSkeleton } from './components/IPOCardSkeleton';
 import { LiveDataIndicator } from './components/LiveDataIndicator';
-import { IPO } from './data/mockData';
+import { IPO } from './services/liveIPOService';
 import { useIPOData } from './hooks/useIPOData';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Alert, AlertDescription } from './components/ui/alert';
 
@@ -16,8 +16,8 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [selectedIPOId, setSelectedIPOId] = useState<string | null>(null);
   
-  // Use live IPO data
-  const { ipos, loading, error, refreshData, lastUpdated } = useIPOData();
+  // Use live IPO data from APIs only
+  const { ipos, loading, error, refreshData, lastUpdated, isLiveData } = useIPOData();
 
   const filteredIPOs = useMemo(() => {
     let filtered = ipos;
@@ -51,11 +51,18 @@ function App() {
     setSelectedIPOId(null);
   };
 
+  const handleRefresh = async () => {
+    await refreshData();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onRefresh={handleRefresh}
+        isRefreshing={loading}
+        lastUpdated={lastUpdated}
       />
       
       <FilterTabs 
@@ -65,12 +72,41 @@ function App() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Connection Status */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 text-sm">
+            {isLiveData ? (
+              <>
+                <Wifi className="w-4 h-4 text-green-600" />
+                <span className="text-green-700">Connected to Chittorgarh APIs</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4 text-red-600" />
+                <span className="text-red-700">API Connection Failed</span>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Error Alert */}
         {error && (
           <Alert className="mb-6 border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
-              {error}. Showing cached data if available.
+              <div className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button 
+                  onClick={handleRefresh}
+                  disabled={loading}
+                  variant="outline" 
+                  size="sm"
+                  className="ml-4"
+                >
+                  <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                  Retry
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -84,36 +120,30 @@ function App() {
                   {activeFilter === 'all' ? 'All IPOs' : `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} IPOs`}
                 </h2>
                 <LiveDataIndicator 
-                  isLive={!error && !loading}
+                  isLive={isLiveData && !error}
                   lastUpdated={lastUpdated}
                   error={error}
                 />
               </div>
               <p className="text-gray-600">
-                {filteredIPOs.length} {filteredIPOs.length === 1 ? 'IPO' : 'IPOs'} found
-                {searchQuery && ` for "${searchQuery}"`}
-                {lastUpdated && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    • Last updated: {lastUpdated.toLocaleTimeString()}
-                  </span>
+                {loading ? 'Loading IPOs...' : (
+                  <>
+                    {filteredIPOs.length} {filteredIPOs.length === 1 ? 'IPO' : 'IPOs'} found
+                    {searchQuery && ` for "${searchQuery}"`}
+                    {lastUpdated && (
+                      <span className="ml-2 text-sm text-gray-500">
+                        • Last updated: {lastUpdated.toLocaleTimeString()}
+                      </span>
+                    )}
+                  </>
                 )}
               </p>
             </div>
-            <Button
-              onClick={refreshData}
-              disabled={loading}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
           </div>
         </div>
 
         {/* IPO Grid */}
-        {loading ? (
+        {loading && ipos.length === 0 ? (
           <IPOGridSkeleton />
         ) : filteredIPOs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -125,7 +155,7 @@ function App() {
               />
             ))}
           </div>
-        ) : (
+        ) : !loading && !error ? (
           <div className="text-center py-12">
             <div className="max-w-md mx-auto">
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -142,7 +172,23 @@ function App() {
               </p>
             </div>
           </div>
-        )}
+        ) : error && ipos.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load IPO Data</h3>
+              <p className="text-gray-600 mb-4">
+                Failed to connect to Chittorgarh APIs. Please check your internet connection and try again.
+              </p>
+              <Button onClick={handleRefresh} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Try Again
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </main>
 
       {/* IPO Details Modal */}
