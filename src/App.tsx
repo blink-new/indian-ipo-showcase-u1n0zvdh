@@ -67,7 +67,7 @@ function App() {
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex flex-col gap-4 mb-6">
           <IPOTypeToggle
             activeType={ipoType}
             onTypeChange={setIPOType}
@@ -143,7 +143,7 @@ function App() {
         {loading && ipos.length === 0 ? (
           <IPOGridSkeleton />
         ) : filteredIPOs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredIPOs.map((ipo) => (
               <IPOCard 
                 key={ipo.id}

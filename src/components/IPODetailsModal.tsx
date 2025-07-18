@@ -52,72 +52,78 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full">
         <DialogHeader>
           <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-gray-900 mb-2">
+            <div className="flex-1 min-w-0 pr-4">
+              <DialogTitle className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 line-clamp-2">
                 {ipo.companyName}
               </DialogTitle>
-              <div className="flex items-center gap-3">
-                <Badge className={`${getStatusColor(ipo.status)}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                <Badge className={`${getStatusColor(ipo.status)} w-fit`}>
                   {ipo.status.toUpperCase()}
                 </Badge>
-                <span className="text-gray-600">{ipo.sector} • {ipo.industry}</span>
+                <span className="text-sm sm:text-base text-gray-600 line-clamp-1">{ipo.sector} • {ipo.industry}</span>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
               <X className="w-4 h-4" />
             </Button>
           </div>
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="financials">Financials</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="risks">Risk Factors</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm py-2">Overview</TabsTrigger>
+            <TabsTrigger value="financials" className="text-xs sm:text-sm py-2">Financials</TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs sm:text-sm py-2">Timeline</TabsTrigger>
+            <TabsTrigger value="risks" className="text-xs sm:text-sm py-2">
+              <span className="hidden sm:inline">Risk Factors</span>
+              <span className="sm:hidden">Risks</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Price Range</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Price Range</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">
                     ₹{ipo.priceRange.min} - ₹{ipo.priceRange.max}
                   </p>
-                  <p className="text-sm text-gray-600">Lot Size: {ipo.lotSize} shares</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Lot Size: {ipo.lotSize} shares</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Issue Size</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Issue Size</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(ipo.issueSize)}</p>
-                  <p className="text-sm text-gray-600">Total offering</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{formatCurrency(ipo.issueSize)}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Total offering</p>
                 </CardContent>
               </Card>
 
               {ipo.gmp && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Grey Market Premium</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">
+                      <span className="hidden sm:inline">Grey Market Premium</span>
+                      <span className="sm:hidden">GMP</span>
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className={`text-2xl font-bold flex items-center gap-2 ${
+                    <p className={`text-lg sm:text-2xl font-bold flex items-center gap-2 ${
                       ipo.gmp > 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {ipo.gmp > 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                      {ipo.gmp > 0 ? <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" /> : <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
                       ₹{Math.abs(ipo.gmp)}
                     </p>
-                    <p className="text-sm text-gray-600">Current premium</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Current premium</p>
                   </CardContent>
                 </Card>
               )}
@@ -149,24 +155,33 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
                   <div className="space-y-4">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium">Overall Subscription</span>
-                        <span className="text-lg font-bold">{currentSubscriptionStatus.overall}x</span>
+                        <span className="font-medium text-sm sm:text-base">Overall Subscription</span>
+                        <span className="text-base sm:text-lg font-bold">{currentSubscriptionStatus.overall}x</span>
                       </div>
                       <Progress value={Math.min(currentSubscriptionStatus.overall * 20, 100)} className="h-3" />
                     </div>
                     
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Retail Individual Investors</p>
-                        <p className="text-xl font-bold text-gray-900">{currentSubscriptionStatus.retail}x</p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          <span className="hidden sm:inline">Retail Individual Investors</span>
+                          <span className="sm:hidden">Retail</span>
+                        </p>
+                        <p className="text-lg sm:text-xl font-bold text-gray-900">{currentSubscriptionStatus.retail}x</p>
                       </div>
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Qualified Institutional Buyers</p>
-                        <p className="text-xl font-bold text-gray-900">{currentSubscriptionStatus.qib}x</p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          <span className="hidden sm:inline">Qualified Institutional Buyers</span>
+                          <span className="sm:hidden">QIB</span>
+                        </p>
+                        <p className="text-lg sm:text-xl font-bold text-gray-900">{currentSubscriptionStatus.qib}x</p>
                       </div>
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Non-Institutional Investors</p>
-                        <p className="text-xl font-bold text-gray-900">{currentSubscriptionStatus.nii}x</p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                          <span className="hidden sm:inline">Non-Institutional Investors</span>
+                          <span className="sm:hidden">NII</span>
+                        </p>
+                        <p className="text-lg sm:text-xl font-bold text-gray-900">{currentSubscriptionStatus.nii}x</p>
                       </div>
                     </div>
                   </div>
@@ -213,22 +228,22 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
           </TabsContent>
 
           <TabsContent value="financials" className="space-y-6 mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Revenue</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Revenue</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(ipo.companyDetails.revenue)}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">{formatCurrency(ipo.companyDetails.revenue)}</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Profit</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Profit</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-2xl font-bold ${
+                  <p className={`text-lg sm:text-2xl font-bold ${
                     ipo.companyDetails.profit > 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {formatCurrency(ipo.companyDetails.profit)}
@@ -238,10 +253,10 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">ROE</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">ROE</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-2xl font-bold ${
+                  <p className={`text-lg sm:text-2xl font-bold ${
                     ipo.companyDetails.roe > 0 ? 'text-green-600' : 'text-red-600'
                   }`}>
                     {ipo.companyDetails.roe}%
@@ -252,30 +267,30 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
               {ipo.companyDetails.pe && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">P/E Ratio</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">P/E Ratio</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold text-gray-900">{ipo.companyDetails.pe}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900">{ipo.companyDetails.pe}</p>
                   </CardContent>
                 </Card>
               )}
 
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Book Value</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Book Value</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold text-gray-900">₹{ipo.companyDetails.bookValue}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-gray-900">₹{ipo.companyDetails.bookValue}</p>
                 </CardContent>
               </Card>
 
               {ipo.companyDetails.marketCap && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">Market Cap</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium text-gray-600">Market Cap</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(ipo.companyDetails.marketCap)}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900">{formatCurrency(ipo.companyDetails.marketCap)}</p>
                   </CardContent>
                 </Card>
               )}
@@ -291,26 +306,26 @@ export function IPODetailsModal({ ipo, isOpen, onClose }: IPODetailsModalProps) 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Bidding Opens</span>
-                    <span className="text-gray-700">{formatDate(ipo.keyDates.bidding.start)}</span>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-1 sm:gap-0">
+                    <span className="font-medium text-sm sm:text-base">Bidding Opens</span>
+                    <span className="text-gray-700 text-sm sm:text-base">{formatDate(ipo.keyDates.bidding.start)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Bidding Closes</span>
-                    <span className="text-gray-700">{formatDate(ipo.keyDates.bidding.end)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-1 sm:gap-0">
+                    <span className="font-medium text-sm sm:text-base">Bidding Closes</span>
+                    <span className="text-gray-700 text-sm sm:text-base">{formatDate(ipo.keyDates.bidding.end)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Allotment Date</span>
-                    <span className="text-gray-700">{formatDate(ipo.keyDates.allotment)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-1 sm:gap-0">
+                    <span className="font-medium text-sm sm:text-base">Allotment Date</span>
+                    <span className="text-gray-700 text-sm sm:text-base">{formatDate(ipo.keyDates.allotment)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Refund Date</span>
-                    <span className="text-gray-700">{formatDate(ipo.keyDates.refund)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-1 sm:gap-0">
+                    <span className="font-medium text-sm sm:text-base">Refund Date</span>
+                    <span className="text-gray-700 text-sm sm:text-base">{formatDate(ipo.keyDates.refund)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Listing Date</span>
-                    <span className="text-gray-700">{formatDate(ipo.keyDates.listing)}</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-1 sm:gap-0">
+                    <span className="font-medium text-sm sm:text-base">Listing Date</span>
+                    <span className="text-gray-700 text-sm sm:text-base">{formatDate(ipo.keyDates.listing)}</span>
                   </div>
                 </div>
               </CardContent>
