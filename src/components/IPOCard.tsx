@@ -55,12 +55,17 @@ export function IPOCard({ ipo, onViewDetails }: IPOCardProps) {
               <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
                 {ipo.companyName}
               </h3>
-              <Badge className={`text-xs ${getStatusColor(ipo.status)}`}>
-                <span className="flex items-center gap-1">
-                  {getStatusIcon(ipo.status)}
-                  {ipo.status.toUpperCase()}
-                </span>
-              </Badge>
+              <div className="flex items-center gap-1">
+                <Badge className={`text-xs ${getStatusColor(ipo.status)}`}>
+                  <span className="flex items-center gap-1">
+                    {getStatusIcon(ipo.status)}
+                    {ipo.status.toUpperCase()}
+                  </span>
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {ipo.ipoType === 'sme' ? 'SME' : 'MAIN'}
+                </Badge>
+              </div>
             </div>
             <p className="text-sm text-gray-600">{ipo.sector} • {ipo.industry}</p>
           </div>

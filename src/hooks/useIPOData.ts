@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { IPO, fetchLiveIPOData, getCachedIPOData, setCachedIPOData, fetchIPOSubscriptionStatus } from '../services/liveIPOService';
+import { IPO, IPOType, fetchLiveIPOData, getCachedIPOData, setCachedIPOData, fetchIPOSubscriptionStatus } from '../services/liveIPOService';
 
 interface UseIPODataReturn {
   ipos: IPO[];
@@ -8,6 +8,8 @@ interface UseIPODataReturn {
   refreshData: () => Promise<void>;
   lastUpdated: Date | null;
   isLiveData: boolean;
+  ipoType: IPOType;
+  setIPOType: (type: IPOType) => void;
 }
 
 export function useIPOData(): UseIPODataReturn {
@@ -16,68 +18,75 @@ export function useIPOData(): UseIPODataReturn {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isLiveData, setIsLiveData] = useState(false);
+  const [ipoType, setIPOType] = useState<IPOType>('mainboard');
 
-  const loadIPOData = useCallback(async () => {
+  const loadIPOData = useCallback(async (type: IPOType = ipoType) => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Loading IPO data from APIs...');
+      console.log(`Loading ${type} IPO data from APIs...`);
 
       // First, try to get cached data for immediate display
-      const cachedData = getCachedIPOData();
+      const cachedData = getCachedIPOData(type);
       if (cachedData && cachedData.length > 0) {
-        console.log('Using cached data for immediate display');
+        console.log(`Using cached ${type} data for immediate display`);
         setIpos(cachedData);
         setIsLiveData(true);
         setLastUpdated(new Date());
       }
 
       // Fetch fresh data from APIs
-      const freshData = await fetchLiveIPOData();
+      const freshData = await fetchLiveIPOData(type);
       
       if (freshData && freshData.length > 0) {
-        console.log(`Loaded ${freshData.length} IPOs from live APIs`);
+        console.log(`Loaded ${freshData.length} ${type} IPOs from live APIs`);
         setIpos(freshData);
-        setCachedIPOData(freshData);
+        setCachedIPOData(freshData, type);
         setIsLiveData(true);
         setLastUpdated(new Date());
         setError(null); // Clear any previous errors
       } else {
-        throw new Error('No IPO data received from APIs');
+        throw new Error(`No ${type} IPO data received from APIs`);
       }
     } catch (err) {
-      console.error('Error loading IPO data:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load IPO data from APIs';
+      console.error(`Error loading ${type} IPO data:`, err);
+      const errorMessage = err instanceof Error ? err.message : `Failed to load ${type} IPO data from APIs`;
       setError(errorMessage);
       setIsLiveData(false);
       
       // If no cached data is available, show empty state
-      const cachedData = getCachedIPOData();
+      const cachedData = getCachedIPOData(type);
       if (!cachedData || cachedData.length === 0) {
         setIpos([]);
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ipoType]);
 
   const refreshData = useCallback(async () => {
-    console.log('Manually refreshing IPO data...');
-    await loadIPOData();
+    console.log(`Manually refreshing ${ipoType} IPO data...`);
+    await loadIPOData(ipoType);
+  }, [loadIPOData, ipoType]);
+
+  const handleIPOTypeChange = useCallback((type: IPOType) => {
+    console.log(`Switching to ${type} IPOs...`);
+    setIPOType(type);
+    loadIPOData(type);
   }, [loadIPOData]);
 
   useEffect(() => {
-    loadIPOData();
+    loadIPOData(ipoType);
     
     // Set up auto-refresh every 10 minutes for live data
     const interval = setInterval(() => {
-      console.log('Auto-refreshing IPO data...');
-      loadIPOData();
+      console.log(`Auto-refreshing ${ipoType} IPO data...`);
+      loadIPOData(ipoType);
     }, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [loadIPOData]);
+  }, [loadIPOData, ipoType]);
 
   return {
     ipos,
@@ -86,6 +95,8 @@ export function useIPOData(): UseIPODataReturn {
     refreshData,
     lastUpdated,
     isLiveData,
+    ipoType,
+    setIPOType: handleIPOTypeChange,
   };
 }
 

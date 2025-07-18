@@ -5,6 +5,7 @@ import { IPOCard } from './components/IPOCard';
 import { IPODetailsModal } from './components/IPODetailsModal';
 import { IPOGridSkeleton } from './components/IPOCardSkeleton';
 import { LiveDataIndicator } from './components/LiveDataIndicator';
+import { IPOTypeToggle } from './components/IPOTypeToggle';
 import { IPO } from './services/liveIPOService';
 import { useIPOData } from './hooks/useIPOData';
 import { RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
@@ -17,7 +18,7 @@ function App() {
   const [selectedIPOId, setSelectedIPOId] = useState<string | null>(null);
   
   // Use live IPO data from APIs only
-  const { ipos, loading, error, refreshData, lastUpdated, isLiveData } = useIPOData();
+  const { ipos, loading, error, refreshData, lastUpdated, isLiveData, ipoType, setIPOType } = useIPOData();
 
   const filteredIPOs = useMemo(() => {
     let filtered = ipos;
@@ -65,29 +66,25 @@ function App() {
         lastUpdated={lastUpdated}
       />
       
-      <FilterTabs 
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-        ipos={ipos}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Connection Status */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 text-sm">
-            {isLiveData ? (
-              <>
-                <Wifi className="w-4 h-4 text-green-600" />
-                <span className="text-green-700">Connected to Chittorgarh APIs</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="w-4 h-4 text-red-600" />
-                <span className="text-red-700">API Connection Failed</span>
-              </>
-            )}
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <IPOTypeToggle
+            activeType={ipoType}
+            onTypeChange={setIPOType}
+            mainboardCount={0} // Will be updated with actual counts
+            smeCount={0} // Will be updated with actual counts
+          />
+          
+          <FilterTabs 
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            ipos={ipos}
+          />
         </div>
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0">
+
 
         {/* Error Alert */}
         {error && (
@@ -117,7 +114,7 @@ function App() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {activeFilter === 'all' ? 'All IPOs' : `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} IPOs`}
+                  {activeFilter === 'all' ? `All ${ipoType === 'sme' ? 'SME' : 'Mainboard'} IPOs` : `${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)} ${ipoType === 'sme' ? 'SME' : 'Mainboard'} IPOs`}
                 </h2>
                 <LiveDataIndicator 
                   isLive={isLiveData && !error}

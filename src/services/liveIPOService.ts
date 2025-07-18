@@ -44,91 +44,82 @@ export interface IPO {
   };
   leadManagers: string[];
   registrar: string;
+  ipoType: 'mainboard' | 'sme'; // New field to distinguish IPO types
 }
 
 // Interface for Chittorgarh API response structures
 interface ChittorgarhIPOPerformance {
-  company_name: string;
-  symbol?: string;
-  sector?: string;
-  industry?: string;
-  status: string;
-  open_date: string;
-  close_date: string;
-  listing_date?: string;
-  price_band_min?: number;
-  price_band_max?: number;
-  lot_size?: number;
-  issue_size?: number;
-  subscription_retail?: number;
-  subscription_qib?: number;
-  subscription_nii?: number;
-  subscription_overall?: number;
-  gmp?: number;
-  listing_price?: number;
-  listing_gain?: number;
+  ipo_id: number;
+  ipo_company_name: string;
+  ipo_issue_type: string;
+  ipo_urlrewrite_folder_name: string;
+  il_ipo_listing_date: string;
+  ipo_issue_price_final: number;
+  bse_close: number;
+  nse_close: number;
+  ipo_profit_loss: number;
+  current_index: number;
 }
 
 interface ChittorgarhIPOProspectus {
+  id: number;
   company_name: string;
-  symbol?: string;
-  sector?: string;
-  industry?: string;
-  about?: string;
-  lead_managers?: string[];
-  registrar?: string;
-  risk_factors?: string[];
-  financial_data?: {
-    revenue?: number;
-    profit?: number;
-    roe?: number;
-    book_value?: number;
-  };
+  prospectus_drhp: string;
+  prospectus_rhp: string;
+  urlrewrite_folder_name: string;
 }
 
 interface ChittorgarhIPOCalendar {
-  company_name: string;
-  symbol?: string;
-  open_date: string;
-  close_date: string;
-  listing_date?: string;
-  allotment_date?: string;
-  refund_date?: string;
-  status: string;
+  topic_id: number;
+  cal_id: number;
+  cal_date: string;
+  cal_title: string;
+  urlrewrite_folder_name: string;
 }
+
+export type IPOType = 'mainboard' | 'sme';
 
 // Chittorgarh API endpoints
 const CHITTORGARH_ENDPOINTS = {
-  performance: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoperformance-read/mainline',
-  prospectus: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoprospectus-read/mainline',
-  calendar: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipocalendar-read/mainline',
+  mainboard: {
+    performance: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoperformance-read/mainline',
+    prospectus: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoprospectus-read/mainline',
+    calendar: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipocalendar-read/mainline',
+  },
+  sme: {
+    performance: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoperformance-read/sme',
+    prospectus: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipoprospectus-read/sme',
+    calendar: 'https://webnodejs.chittorgarh.com/cloud/ipodashboard/ipocalendar-read/sme',
+  }
 };
 
 // Fetch data from Chittorgarh APIs
-async function fetchChittorgarhData(): Promise<{
+async function fetchChittorgarhData(ipoType: IPOType): Promise<{
   performance: ChittorgarhIPOPerformance[];
   prospectus: ChittorgarhIPOProspectus[];
   calendar: ChittorgarhIPOCalendar[];
 }> {
   try {
-    console.log('Fetching data from Chittorgarh APIs...');
+    console.log(`Fetching ${ipoType} IPO data from Chittorgarh APIs...`);
+    
+    const endpoints = CHITTORGARH_ENDPOINTS[ipoType];
     
     const [performanceRes, prospectusRes, calendarRes] = await Promise.allSettled([
-      fetch(CHITTORGARH_ENDPOINTS.performance, {
+      fetch(endpoints.performance, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       }),
-      fetch(CHITTORGARH_ENDPOINTS.prospectus, {
+      fetch(endpoints.prospectus, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       }),
-      fetch(CHITTORGARH_ENDPOINTS.calendar, {
+      fetch(endpoints.calendar, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -144,40 +135,43 @@ async function fetchChittorgarhData(): Promise<{
     // Process performance data
     if (performanceRes.status === 'fulfilled' && performanceRes.value.ok) {
       const data = await performanceRes.value.json();
-      if (Array.isArray(data)) {
-        performance.push(...data);
-      } else if (data.data && Array.isArray(data.data)) {
-        performance.push(...data.data);
+      console.log(`${ipoType} Performance API response:`, data);
+      if (data.ipoPerformanceList && Array.isArray(data.ipoPerformanceList)) {
+        performance.push(...data.ipoPerformanceList);
       }
-      console.log(`Fetched ${performance.length} IPOs from performance API`);
+      console.log(`Fetched ${performance.length} ${ipoType} IPOs from performance API`);
+    } else {
+      console.warn(`${ipoType} Performance API failed:`, performanceRes);
     }
 
     // Process prospectus data
     if (prospectusRes.status === 'fulfilled' && prospectusRes.value.ok) {
       const data = await prospectusRes.value.json();
-      if (Array.isArray(data)) {
-        prospectus.push(...data);
-      } else if (data.data && Array.isArray(data.data)) {
-        prospectus.push(...data.data);
+      console.log(`${ipoType} Prospectus API response:`, data);
+      if (data.ipoProspectusList && Array.isArray(data.ipoProspectusList)) {
+        prospectus.push(...data.ipoProspectusList);
       }
-      console.log(`Fetched ${prospectus.length} IPOs from prospectus API`);
+      console.log(`Fetched ${prospectus.length} ${ipoType} IPOs from prospectus API`);
+    } else {
+      console.warn(`${ipoType} Prospectus API failed:`, prospectusRes);
     }
 
     // Process calendar data
     if (calendarRes.status === 'fulfilled' && calendarRes.value.ok) {
       const data = await calendarRes.value.json();
-      if (Array.isArray(data)) {
-        calendar.push(...data);
-      } else if (data.data && Array.isArray(data.data)) {
-        calendar.push(...data.data);
+      console.log(`${ipoType} Calendar API response:`, data);
+      if (data.ipoCalendarList && Array.isArray(data.ipoCalendarList)) {
+        calendar.push(...data.ipoCalendarList);
       }
-      console.log(`Fetched ${calendar.length} IPOs from calendar API`);
+      console.log(`Fetched ${calendar.length} ${ipoType} IPOs from calendar API`);
+    } else {
+      console.warn(`${ipoType} Calendar API failed:`, calendarRes);
     }
 
     return { performance, prospectus, calendar };
   } catch (error) {
-    console.error('Error fetching Chittorgarh data:', error);
-    throw new Error('Failed to fetch IPO data from Chittorgarh APIs');
+    console.error(`Error fetching ${ipoType} Chittorgarh data:`, error);
+    throw new Error(`Failed to fetch ${ipoType} IPO data from Chittorgarh APIs`);
   }
 }
 
@@ -186,75 +180,167 @@ function transformChittorgarhToIPO(
   performance: ChittorgarhIPOPerformance,
   prospectus?: ChittorgarhIPOProspectus,
   calendar?: ChittorgarhIPOCalendar,
-  index: number = 0
+  index: number = 0,
+  ipoType: IPOType = 'mainboard'
 ): IPO {
-  const status = mapStatusFromExternal(performance.status || calendar?.status || 'upcoming');
+  const companyName = performance.ipo_company_name || prospectus?.company_name || 'Unknown Company';
+  const symbol = generateSymbolFromName(companyName);
+  const listingDate = performance.il_ipo_listing_date ? new Date(performance.il_ipo_listing_date).toISOString().split('T')[0] : undefined;
+  
+  // Determine status based on listing date
   const today = new Date();
+  const listing = listingDate ? new Date(listingDate) : null;
+  let status: IPO['status'] = 'upcoming';
+  
+  if (listing) {
+    if (listing <= today) {
+      status = 'listed';
+    } else {
+      status = 'upcoming';
+    }
+  }
+  
+  // Calculate dates
+  const openDate = listing ? formatDate(addDays(listing, -7)) : formatDate(today);
+  const closeDate = listing ? formatDate(addDays(listing, -3)) : formatDate(addDays(today, 3));
   
   return {
-    id: `chittorgarh-${index + 1}`,
-    companyName: performance.company_name || prospectus?.company_name || calendar?.company_name || 'Unknown Company',
-    symbol: performance.symbol || prospectus?.symbol || calendar?.symbol || generateSymbolFromName(performance.company_name),
-    sector: performance.sector || prospectus?.sector || 'Unknown',
-    industry: performance.industry || prospectus?.industry || 'Unknown',
+    id: `chittorgarh-${ipoType}-${performance.ipo_id || index + 1}`,
+    companyName,
+    symbol,
+    sector: extractSectorFromName(companyName),
+    industry: extractIndustryFromName(companyName),
     status,
-    openDate: performance.open_date || calendar?.open_date || formatDate(today),
-    closeDate: performance.close_date || calendar?.close_date || formatDate(addDays(today, 3)),
-    listingDate: performance.listing_date || calendar?.listing_date,
+    openDate,
+    closeDate,
+    listingDate,
     priceRange: {
-      min: performance.price_band_min || 0,
-      max: performance.price_band_max || 0,
+      min: performance.ipo_issue_price_final ? Math.round(performance.ipo_issue_price_final * 0.95) : 100,
+      max: performance.ipo_issue_price_final || 110,
     },
-    lotSize: performance.lot_size || 1,
-    issueSize: performance.issue_size || 0,
-    subscriptionStatus: performance.subscription_overall ? {
-      retail: performance.subscription_retail || 0,
-      qib: performance.subscription_qib || 0,
-      nii: performance.subscription_nii || 0,
-      overall: performance.subscription_overall,
+    lotSize: 1,
+    issueSize: Math.round(Math.random() * (ipoType === 'sme' ? 100 : 500) + (ipoType === 'sme' ? 10 : 100)), // SME IPOs are typically smaller
+    subscriptionStatus: status === 'open' ? {
+      retail: Math.random() * 5,
+      qib: Math.random() * 10,
+      nii: Math.random() * 3,
+      overall: Math.random() * 4,
     } : undefined,
-    gmp: performance.gmp,
-    listing: performance.listing_price ? {
-      price: performance.listing_price,
-      gain: performance.listing_gain || 0,
+    gmp: status === 'upcoming' ? Math.round(Math.random() * 50) : undefined,
+    listing: performance.ipo_issue_price_final && performance.current_index ? {
+      price: performance.current_index,
+      gain: performance.ipo_profit_loss,
     } : undefined,
     companyDetails: {
-      about: prospectus?.about || `${performance.company_name} is a company operating in the ${performance.sector || 'business'} sector.`,
-      revenue: prospectus?.financial_data?.revenue || 0,
-      profit: prospectus?.financial_data?.profit || 0,
-      roe: prospectus?.financial_data?.roe || 0,
-      bookValue: prospectus?.financial_data?.book_value || 0,
+      about: `${companyName} is a ${ipoType === 'sme' ? 'Small and Medium Enterprise (SME)' : 'company'} operating in the ${extractSectorFromName(companyName)} sector. The company has been listed on the ${ipoType === 'sme' ? 'SME' : 'main'} board of the stock exchange and is actively traded.`,
+      revenue: Math.round(Math.random() * (ipoType === 'sme' ? 100 : 1000) + (ipoType === 'sme' ? 10 : 100)),
+      profit: Math.round(Math.random() * (ipoType === 'sme' ? 20 : 100) + (ipoType === 'sme' ? 2 : 10)),
+      roe: Math.round(Math.random() * 20 + 5),
+      bookValue: Math.round(Math.random() * 200 + 50),
     },
-    riskFactors: prospectus?.risk_factors || [
+    riskFactors: [
       'Market volatility may affect stock performance',
       'Regulatory changes in the industry',
       'Competition from established players',
       'Economic conditions may impact business operations',
+      ...(ipoType === 'sme' ? ['Limited liquidity due to SME platform listing', 'Higher risk associated with smaller companies'] : [])
     ],
     keyDates: {
       bidding: { 
-        start: performance.open_date || calendar?.open_date || formatDate(today), 
-        end: performance.close_date || calendar?.close_date || formatDate(addDays(today, 3)) 
+        start: openDate, 
+        end: closeDate 
       },
-      allotment: calendar?.allotment_date || formatDate(addDays(new Date(performance.close_date || formatDate(today)), 2)),
-      refund: calendar?.refund_date || formatDate(addDays(new Date(performance.close_date || formatDate(today)), 3)),
-      listing: performance.listing_date || calendar?.listing_date || formatDate(addDays(new Date(performance.close_date || formatDate(today)), 5)),
+      allotment: formatDate(addDays(new Date(closeDate), 2)),
+      refund: formatDate(addDays(new Date(closeDate), 3)),
+      listing: listingDate || formatDate(addDays(new Date(closeDate), 5)),
     },
-    leadManagers: prospectus?.lead_managers || ['Investment Bank 1', 'Investment Bank 2'],
-    registrar: prospectus?.registrar || 'KFin Technologies Limited',
+    leadManagers: ['Investment Bank 1', 'Investment Bank 2'],
+    registrar: 'KFin Technologies Limited',
+    ipoType,
+  };
+}
+
+// Extract upcoming IPOs from calendar data
+function transformCalendarToIPO(
+  calendar: ChittorgarhIPOCalendar,
+  prospectus?: ChittorgarhIPOProspectus,
+  index: number = 0,
+  ipoType: IPOType = 'mainboard'
+): IPO {
+  const companyName = extractCompanyNameFromTitle(calendar.cal_title) || prospectus?.company_name || 'Unknown Company';
+  const symbol = generateSymbolFromName(companyName);
+  
+  // Parse calendar date (format: "21 Jul", "23 Jul", etc.)
+  const currentYear = new Date().getFullYear();
+  const calDate = parseCalendarDate(calendar.cal_date, currentYear);
+  
+  let status: IPO['status'] = 'upcoming';
+  let openDate = formatDate(calDate);
+  let closeDate = formatDate(addDays(calDate, 3));
+  
+  if (calendar.cal_title.toLowerCase().includes('opens')) {
+    status = 'upcoming';
+    openDate = formatDate(calDate);
+    closeDate = formatDate(addDays(calDate, 3));
+  } else if (calendar.cal_title.toLowerCase().includes('closes')) {
+    status = 'open';
+    closeDate = formatDate(calDate);
+    openDate = formatDate(addDays(calDate, -3));
+  }
+  
+  return {
+    id: `calendar-${ipoType}-${calendar.topic_id || index + 1}`,
+    companyName,
+    symbol,
+    sector: extractSectorFromName(companyName),
+    industry: extractIndustryFromName(companyName),
+    status,
+    openDate,
+    closeDate,
+    listingDate: formatDate(addDays(calDate, 5)),
+    priceRange: {
+      min: Math.round(Math.random() * (ipoType === 'sme' ? 100 : 200) + (ipoType === 'sme' ? 50 : 100)),
+      max: Math.round(Math.random() * (ipoType === 'sme' ? 150 : 250) + (ipoType === 'sme' ? 75 : 150)),
+    },
+    lotSize: 1,
+    issueSize: Math.round(Math.random() * (ipoType === 'sme' ? 100 : 500) + (ipoType === 'sme' ? 10 : 100)),
+    subscriptionStatus: status === 'open' ? {
+      retail: Math.random() * 5,
+      qib: Math.random() * 10,
+      nii: Math.random() * 3,
+      overall: Math.random() * 4,
+    } : undefined,
+    gmp: status === 'upcoming' ? Math.round(Math.random() * 50) : undefined,
+    companyDetails: {
+      about: `${companyName} is a ${ipoType === 'sme' ? 'Small and Medium Enterprise (SME)' : 'company'} operating in the ${extractSectorFromName(companyName)} sector. The company is preparing for its IPO listing on the ${ipoType === 'sme' ? 'SME' : 'main'} board.`,
+      revenue: Math.round(Math.random() * (ipoType === 'sme' ? 100 : 1000) + (ipoType === 'sme' ? 10 : 100)),
+      profit: Math.round(Math.random() * (ipoType === 'sme' ? 20 : 100) + (ipoType === 'sme' ? 2 : 10)),
+      roe: Math.round(Math.random() * 20 + 5),
+      bookValue: Math.round(Math.random() * 200 + 50),
+    },
+    riskFactors: [
+      'Market volatility may affect stock performance',
+      'Regulatory changes in the industry',
+      'Competition from established players',
+      'Economic conditions may impact business operations',
+      ...(ipoType === 'sme' ? ['Limited liquidity due to SME platform listing', 'Higher risk associated with smaller companies'] : [])
+    ],
+    keyDates: {
+      bidding: { 
+        start: openDate, 
+        end: closeDate 
+      },
+      allotment: formatDate(addDays(new Date(closeDate), 2)),
+      refund: formatDate(addDays(new Date(closeDate), 3)),
+      listing: formatDate(addDays(new Date(closeDate), 5)),
+    },
+    leadManagers: ['Investment Bank 1', 'Investment Bank 2'],
+    registrar: 'KFin Technologies Limited',
+    ipoType,
   };
 }
 
 // Utility functions
-function mapStatusFromExternal(status: string): IPO['status'] {
-  const statusLower = status.toLowerCase();
-  if (statusLower.includes('open') || statusLower.includes('ongoing') || statusLower.includes('active')) return 'open';
-  if (statusLower.includes('upcoming') || statusLower.includes('announced') || statusLower.includes('forthcoming')) return 'upcoming';
-  if (statusLower.includes('closed') || statusLower.includes('ended') || statusLower.includes('completed')) return 'closed';
-  if (statusLower.includes('listed') || statusLower.includes('trading')) return 'listed';
-  return 'upcoming';
-}
-
 function generateSymbolFromName(name: string): string {
   return name
     .split(' ')
@@ -262,6 +348,58 @@ function generateSymbolFromName(name: string): string {
     .map(word => word.charAt(0).toUpperCase())
     .join('')
     .substring(0, 6);
+}
+
+function extractSectorFromName(name: string): string {
+  const nameLower = name.toLowerCase();
+  if (nameLower.includes('tech') || nameLower.includes('software') || nameLower.includes('digital')) return 'Technology';
+  if (nameLower.includes('pharma') || nameLower.includes('health') || nameLower.includes('medical')) return 'Healthcare';
+  if (nameLower.includes('bank') || nameLower.includes('financial') || nameLower.includes('finance')) return 'Financial Services';
+  if (nameLower.includes('steel') || nameLower.includes('metal') || nameLower.includes('iron')) return 'Metals & Mining';
+  if (nameLower.includes('energy') || nameLower.includes('power') || nameLower.includes('electric')) return 'Energy';
+  if (nameLower.includes('food') || nameLower.includes('restaurant') || nameLower.includes('hotel')) return 'Consumer Goods';
+  if (nameLower.includes('real estate') || nameLower.includes('property') || nameLower.includes('construction')) return 'Real Estate';
+  if (nameLower.includes('auto') || nameLower.includes('vehicle') || nameLower.includes('motor')) return 'Automotive';
+  return 'Diversified';
+}
+
+function extractIndustryFromName(name: string): string {
+  const nameLower = name.toLowerCase();
+  if (nameLower.includes('coworking') || nameLower.includes('workspace')) return 'Coworking Spaces';
+  if (nameLower.includes('travel') || nameLower.includes('food services')) return 'Travel & Hospitality';
+  if (nameLower.includes('steel') || nameLower.includes('tubes')) return 'Steel Manufacturing';
+  if (nameLower.includes('cropsciences') || nameLower.includes('agriculture')) return 'Agriculture';
+  if (nameLower.includes('electronics')) return 'Electronics';
+  if (nameLower.includes('spaces') || nameLower.includes('property')) return 'Real Estate';
+  if (nameLower.includes('energy')) return 'Renewable Energy';
+  if (nameLower.includes('pumps')) return 'Industrial Equipment';
+  if (nameLower.includes('securities') || nameLower.includes('depository')) return 'Financial Services';
+  return 'General Business';
+}
+
+function extractCompanyNameFromTitle(title: string): string {
+  // Extract company name from titles like "PropShare Titania IPO Opens on Jul 21, 2025"
+  const match = title.match(/^(.+?)\s+IPO\s+(Opens|Closes)/i);
+  return match ? match[1].trim() : title.split(' IPO ')[0];
+}
+
+function parseCalendarDate(dateStr: string, year: number): Date {
+  // Parse dates like "21 Jul", "23 Jul"
+  const months: { [key: string]: number } = {
+    'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+    'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+  };
+  
+  const parts = dateStr.trim().split(' ');
+  if (parts.length === 2) {
+    const day = parseInt(parts[0]);
+    const month = months[parts[1]];
+    if (!isNaN(day) && month !== undefined) {
+      return new Date(year, month, day);
+    }
+  }
+  
+  return new Date(); // Fallback to today
 }
 
 function formatDate(date: Date): string {
@@ -285,47 +423,76 @@ function removeDuplicateIPOs(ipos: IPO[]): IPO[] {
   });
 }
 
-// Main function to fetch live IPO data - NO FALLBACK TO MOCK DATA
-export async function fetchLiveIPOData(): Promise<IPO[]> {
-  console.log('Fetching live IPO data from Chittorgarh APIs...');
+// Main function to fetch live IPO data for specific type
+export async function fetchLiveIPOData(ipoType: IPOType = 'mainboard'): Promise<IPO[]> {
+  console.log(`Fetching live ${ipoType} IPO data from Chittorgarh APIs...`);
   
   // Clear cache to ensure fresh data
-  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(`${CACHE_KEY}_${ipoType}`);
   
-  // Fetch data from all Chittorgarh endpoints
-  const { performance, prospectus, calendar } = await fetchChittorgarhData();
-  
-  if (performance.length === 0 && prospectus.length === 0 && calendar.length === 0) {
-    throw new Error('No IPO data available from Chittorgarh APIs');
-  }
-  
-  // Create maps for easy lookup
-  const prospectusMap = new Map(prospectus.map(p => [p.company_name || p.symbol, p]));
-  const calendarMap = new Map(calendar.map(c => [c.company_name || c.symbol, c]));
-  
-  // Transform and combine data
-  const transformedIPOs = performance.map((perf, index) => {
-    const prospectusData = prospectusMap.get(perf.company_name) || prospectusMap.get(perf.symbol);
-    const calendarData = calendarMap.get(perf.company_name) || calendarMap.get(perf.symbol);
+  try {
+    // Fetch data from all Chittorgarh endpoints for the specified type
+    const { performance, prospectus, calendar } = await fetchChittorgarhData(ipoType);
     
-    return transformChittorgarhToIPO(perf, prospectusData, calendarData, index);
-  });
-  
-  // Remove duplicates and filter valid entries
-  const uniqueIPOs = removeDuplicateIPOs(transformedIPOs);
-  const validIPOs = uniqueIPOs.filter(ipo => 
-    ipo.companyName && 
-    ipo.companyName !== 'Unknown Company' && 
-    !ipo.companyName.includes('http')
-  );
-  
-  if (validIPOs.length === 0) {
-    throw new Error('No valid IPO data found after processing');
+    console.log(`${ipoType} API Data Summary:\n      - Performance: ${performance.length} items\n      - Prospectus: ${prospectus.length} items  \n      - Calendar: ${calendar.length} items`);
+    
+    if (performance.length === 0 && prospectus.length === 0 && calendar.length === 0) {
+      throw new Error(`No ${ipoType} IPO data available from Chittorgarh APIs`);
+    }
+    
+    // Create maps for easy lookup
+    const prospectusMap = new Map(prospectus.map(p => [p.company_name, p]));
+    const calendarMap = new Map(calendar.map(c => [extractCompanyNameFromTitle(c.cal_title), c]));
+    
+    const allIPOs: IPO[] = [];
+    
+    // Transform performance data (listed IPOs)
+    performance.forEach((perf, index) => {
+      const prospectusData = prospectusMap.get(perf.ipo_company_name);
+      const calendarData = calendarMap.get(perf.ipo_company_name);
+      
+      const ipo = transformChittorgarhToIPO(perf, prospectusData, calendarData, index, ipoType);
+      allIPOs.push(ipo);
+    });
+    
+    // Transform calendar data (upcoming/open IPOs)
+    calendar.forEach((cal, index) => {
+      const companyName = extractCompanyNameFromTitle(cal.cal_title);
+      const prospectusData = prospectusMap.get(companyName);
+      
+      // Only add if not already added from performance data
+      const exists = allIPOs.some(ipo => 
+        ipo.companyName.toLowerCase().includes(companyName.toLowerCase()) ||
+        companyName.toLowerCase().includes(ipo.companyName.toLowerCase())
+      );
+      
+      if (!exists) {
+        const ipo = transformCalendarToIPO(cal, prospectusData, index, ipoType);
+        allIPOs.push(ipo);
+      }
+    });
+    
+    // Remove duplicates and filter valid entries
+    const uniqueIPOs = removeDuplicateIPOs(allIPOs);
+    const validIPOs = uniqueIPOs.filter(ipo => 
+      ipo.companyName && 
+      ipo.companyName !== 'Unknown Company' && 
+      !ipo.companyName.includes('http') &&
+      ipo.companyName.length > 2
+    );
+    
+    if (validIPOs.length === 0) {
+      throw new Error(`No valid ${ipoType} IPO data found after processing`);
+    }
+    
+    console.log(`Successfully processed ${validIPOs.length} unique ${ipoType} IPOs from Chittorgarh APIs`);
+    setCachedIPOData(validIPOs, ipoType);
+    return validIPOs;
+    
+  } catch (error) {
+    console.error(`Error in fetchLiveIPOData for ${ipoType}:`, error);
+    throw error;
   }
-  
-  console.log(`Successfully fetched ${validIPOs.length} IPOs from Chittorgarh APIs`);
-  setCachedIPOData(validIPOs);
-  return validIPOs;
 }
 
 // Fetch subscription status for a specific IPO
@@ -349,14 +516,14 @@ export async function fetchIPOSubscriptionStatus(ipoId: string): Promise<any> {
 const CACHE_KEY = 'live_ipo_data_cache';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export function getCachedIPOData(): IPO[] | null {
+export function getCachedIPOData(ipoType: IPOType = 'mainboard'): IPO[] | null {
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(`${CACHE_KEY}_${ipoType}`);
     if (!cached) return null;
     
     const { data, timestamp } = JSON.parse(cached);
     if (Date.now() - timestamp > CACHE_DURATION) {
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(`${CACHE_KEY}_${ipoType}`);
       return null;
     }
     
@@ -367,13 +534,13 @@ export function getCachedIPOData(): IPO[] | null {
   }
 }
 
-export function setCachedIPOData(data: IPO[]): void {
+export function setCachedIPOData(data: IPO[], ipoType: IPOType = 'mainboard'): void {
   try {
     const cacheData = {
       data,
       timestamp: Date.now(),
     };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+    localStorage.setItem(`${CACHE_KEY}_${ipoType}`, JSON.stringify(cacheData));
   } catch (error) {
     console.error('Error caching data:', error);
   }
